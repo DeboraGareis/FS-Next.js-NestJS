@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Administrador {
+  id       String @id @default(uuid())
+  nombre   String
+  password String
+  email    String @unique
+}
+
+model Usuario {
+  id       String    @id @default(uuid())
+  nombre   String
+  password String
+  email    String    @unique
+  carritos Carrito[]
+}
+
+model Carrito {
+  id             String         @id @default(uuid())
+  fecha          String
+  total          String
+  detalles_orden DetalleOrden[]
+  id_usuario     String
+  usuario        Usuario        @relation(fields: [id_usuario], references: [id], onDelete: Cascade)
+}
+
+model Producto {
+  id        String @id @default(uuid())
+  categoria String
+  nombre    String
+  stock     Int
+  imagen    String
+  precio    Int
+
+  // Relación 1:1 (lado sin `fields` ni `references`)
+  detalle DetalleOrden? @relation("ProductoDetalleOrden")
+}
+
+model DetalleOrden {
+  id          String @id @default(uuid())
+  cantidad    String
+  id_producto String @unique
+  id_carrito  String
+  precio      Int
+
+  carrito Carrito @relation(fields: [id_carrito], references: [id], onDelete: Cascade)
+
+  // Relación 1:1 (este lado define `fields` y `references`)
+  producto Producto @relation("ProductoDetalleOrden", fields: [id_producto], references: [id], onDelete: Cascade)
+}
