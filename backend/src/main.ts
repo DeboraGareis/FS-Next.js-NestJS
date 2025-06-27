@@ -8,7 +8,7 @@ async function bootstrap() {
   // Configuración del Swagger
   const config = new DocumentBuilder()
     .setTitle('API de Ecommerce')
-    .setDescription('Documentación de la API del proyecto de tienda')
+    .setDescription('Documentación de la API del proyecto')
     .setVersion('1.0')
     .addBearerAuth() // si usás JWT
     .build();
