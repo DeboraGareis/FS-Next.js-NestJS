@@ -1,38 +1,73 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
-import { CreateProducto, UpdatePrecio, UpdateStock } from './dto/crear_producto.dto';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ProductoService } from './producto.service';
+import { CrearProductoDto } from './dto/crear-producto.dto';
+import { ActualizarProductoDto } from './dto/actualizar-producto.dto';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('Producto')
 @Controller('producto')
 export class ProductoController {
-    constructor(private readonly productoService: ProductoService) {}
-     @Post()
-      create(@Body() crearProductoDto: CreateProducto) {
-        return this.productoService.create(crearProductoDto);
-      }
-    
-      @Get()
-      getAllList() {
-        return this.productoService.getAllList();
-      }
-    
-      @Get(':id')
-      getById(@Param('id') id: string){
-        return this.productoService.getById(id);
-      }
-    
-       @Put('/precio/:id')
-       updatePrecioById(@Param('id') id: string, @Body() updatePrecio: UpdatePrecio) {
-        return this.productoService.updatePrecioById(id, updatePrecio.precio);
-      }
-    
-      @Put('/stock/:id')
-       updateStockById(@Param('id') id: string, @Body() updateStock: UpdateStock) {
-        return this.productoService.updateStockById(id, updateStock.stock);
-      }
+  constructor(private readonly productoService: ProductoService) {}
 
-      @Delete(':id')
-       deleteById(@Param('id') id: string){
-        return this.productoService.deleteById(id);
-      }
+  @Post()
+  @ApiOperation({ summary: 'Crear un producto' })
+  @ApiBody({ type: CrearProductoDto })
+  async crearProducto(@Body() crearProductoDto: CrearProductoDto) {
+    return await this.productoService.crearProducto(crearProductoDto);
+  }
 
+  @Get()
+  @ApiOperation({ summary: 'Array de objetos de productos de la DB' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista del total de los productos...',
+  })
+  async listaDeProducto() {
+    return await this.productoService.listaDeProducto();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Conseguir 1 producto por ID de la DB' })
+  @ApiParam({ name: 'id', required: true, description: 'El id del producto' })
+  async buscarIdProducto(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.productoService.buscarIdProducto(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar una dato del producto por ID en la DB' })
+  @ApiParam({ name: 'id', required: true, description: 'El id del producto' })
+  @ApiBody({ type: ActualizarProductoDto })
+  async actualizarIdProducto(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() actualizarProductoDto: ActualizarProductoDto,
+  ) {
+    return await this.productoService.actualizarIdProducto(
+      id,
+      actualizarProductoDto,
+    );
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Elimina un producto por ID de la DB' })
+  @ApiParam({ name: 'id', required: true, description: 'El id del producto' })
+  async eliminarIdProducto(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.productoService.eliminarIdProducto(id);
+  }
 }
