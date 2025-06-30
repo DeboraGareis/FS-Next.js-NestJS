@@ -6,35 +6,65 @@ import {
   Put,
   Param,
   Delete,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuario, UpdateMail } from './dto/crear_usuario.dto';
+import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
 
 @Controller('usuario')
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
+  
+
   @Post()
+    @ApiOperation({ summary: 'Crear usuario' })
+    @ApiBody({ type: CreateUsuario })
   async create(@Body() crearUsuarioDto: CreateUsuario) {
     return await this.usuarioService.create(crearUsuarioDto);
   }
 
+
   @Get()
+    @ApiOperation({summary: 'Array de usuarios de la DB' })
   getAllList() {
     return this.usuarioService.getAllList();
   }
 
+
   @Get(':id')
-  getById(@Param('id') id: string) {
+    @ApiOperation({summary: 'Obtiene un usuario de la DB segun su ID'})
+    @ApiParam({
+      name: 'id',
+      required: true,
+      description: 'El id del usuario a obtener',
+    })
+  getById(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usuarioService.getById(id);
   }
 
+
   @Put(':id')
-  updateMailById(@Param('id') id: string, @Body() updateMail: UpdateMail) {
+  @ApiOperation({summary: 'Actualiza el mail de un usuario de la DB segun su ID' })
+  @ApiParam({
+      name: 'id',
+      required: true,
+      description: 'El id del usuario al que actualizamos su mail',
+    })
+  @ApiBody({ type: UpdateMail })
+  updateMailById(@Param('id', new ParseUUIDPipe()) id: string, @Body() updateMail: UpdateMail) {
     return this.usuarioService.updateMailById(id, updateMail.email);
   }
 
+
   @Delete(':id')
-  deleteById(@Param('id') id: string) {
+    @ApiOperation({summary: 'Eliminar usuario por ID de la DB' })
+    @ApiParam({
+      name: 'id',
+      required: true,
+      description: 'El id del usuario a eliminar',
+    })
+  deleteById(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usuarioService.deleteById(id);
   }
 }

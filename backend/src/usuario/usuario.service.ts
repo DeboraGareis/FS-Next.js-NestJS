@@ -1,39 +1,69 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateUsuario } from './dto/crear_usuario.dto';
 import { PrismaService } from 'src/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuarioService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createUsuarioDto: CreateUsuario) {
+    try{
+        const { password } = createUsuarioDto;
+    const hashpassword = await bcrypt.hash(password, 10);
     return await this.prismaService.usuario.create({
       data: {
         email: createUsuarioDto.email,
         nombre: createUsuarioDto.nombre,
-        password: createUsuarioDto.password,
+        password: hashpassword,
       },
     });
+    }
+    catch (error) {
+          throw new InternalServerErrorException();
+        }
   }
+ 
   getById(id: string) {
-    const user = this.prismaService.usuario.findFirst({ where: { id: id } });
-    return user;
+    try{
+        const user = this.prismaService.usuario.findFirst({ where: { id: id } });
+        return user;
+    }
+    catch (error) {
+          throw new InternalServerErrorException();
+        }
   }
 
+ 
   getAllList() {
-    return this.prismaService.usuario.findMany();
+    try{
+        return this.prismaService.usuario.findMany();
+    }
+    catch (error) {
+          throw new InternalServerErrorException();
+        }
   }
 
   updateMailById(id: string, mail: string) {
-    const user = this.prismaService.usuario.update({
+    try{
+        const user = this.prismaService.usuario.update({
       where: { id: id },
       data: { email: mail },
     });
     return user;
+    }
+    catch (error) {
+          throw new InternalServerErrorException();
+    }
   }
 
   deleteById(id: string) {
-    const user = this.prismaService.usuario.delete({ where: { id: id } });
-    return user;
+    try{
+        const user = this.prismaService.usuario.delete({ where: { id: id } });
+        return user;
+    }
+    catch (error) {
+          throw new InternalServerErrorException();
+        }
   }
 }
