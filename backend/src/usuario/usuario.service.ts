@@ -1,39 +1,93 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateUsuario } from './dto/crear_usuario.dto';
 import { PrismaService } from 'src/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuarioService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createUsuarioDto: CreateUsuario) {
-    return await this.prismaService.usuario.create({
-      data: {
-        email: createUsuarioDto.email,
-        nombre: createUsuarioDto.nombre,
-        password: createUsuarioDto.password,
-      },
-    });
+    try {
+      const { password, email } = createUsuarioDto;
+      const emailExiste = await this.getByEmail(email);
+      if (!emailExiste) {
+        const hashpassword = await bcrypt.hash(password, 10);
+        const usuarioNuevo = await this.prismaService.usuario.create({
+          data: {
+            email: email,
+            nombre: createUsuarioDto.nombre,
+            password: hashpassword,
+          },
+        });
+        return usuarioNuevo;
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException();
+    }
   }
+
   getById(id: string) {
-    const user = this.prismaService.usuario.findFirst({ where: { id: id } });
-    return user;
+    try {
+      const user = this.prismaService.usuario.findFirst({ where: { id: id } });
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async getByEmail(email: string) {
+    try {
+      const emailUser = await this.prismaService.usuario.findFirst({
+        where: { email: email },
+        select: { email: true },
+      });
+      if (emailUser?.email === email) {
+        throw new ConflictException('Ya se encuentra registrado en nuestra BD');
+      }
+      return false;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
   getAllList() {
-    return this.prismaService.usuario.findMany();
+    try {
+      return this.prismaService.usuario.findMany();
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
   }
 
   updateMailById(id: string, mail: string) {
-    const user = this.prismaService.usuario.update({
-      where: { id: id },
-      data: { email: mail },
-    });
-    return user;
+    try {
+      const user = this.prismaService.usuario.update({
+        where: { id: id },
+        data: { email: mail },
+      });
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
   }
 
   deleteById(id: string) {
-    const user = this.prismaService.usuario.delete({ where: { id: id } });
-    return user;
+    try {
+      const user = this.prismaService.usuario.delete({ where: { id: id } });
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
   }
 }

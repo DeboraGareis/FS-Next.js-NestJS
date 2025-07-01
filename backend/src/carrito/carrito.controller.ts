@@ -7,17 +7,25 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CrearCarritoDto } from './dto/crear-carrito.dto';
 import { CarritoService } from './carrito.service';
 import { ActualizarCarritoDto } from './dto/actualizar-carrito.dto';
+import { Roles } from 'src/decoradores/roles.decorador';
+import { Rol } from 'src/guard/enum';
+import { AutenticadorGuard } from 'src/guard/autenticador.guard';
+import { RolesGuard } from 'src/guard/roles.guard';
+import { request } from 'http';
 
 @Controller('carrito')
 export class CarritoController {
   constructor(private readonly carritoService: CarritoService) {}
 
   @Post()
+  @Roles(Rol.USUARIO) //asignar el rol que puede acceder a esta informacion
+  @UseGuards(AutenticadorGuard, RolesGuard)
   @ApiOperation({ summary: 'Crear carrito' })
   @ApiBody({ type: CrearCarritoDto })
   async crearCarrito(@Body() crearCarritoDto: CrearCarritoDto) {

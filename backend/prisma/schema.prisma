@@ -18,7 +18,7 @@ id      String      @id @default(uuid())
 nombre String
 password String
 email  String        @unique
-
+suspendido Boolean   @default(true)
 }
 
 model Usuario {
