@@ -26,8 +26,11 @@ export class AutenticadorGuard implements CanActivate {
         throw new UnauthorizedException('Error al validar el token');
       }
       request.user = payload; // preguntar que datos me envia por token para validar
+
       return true;
     } catch (error) {
+      console.log(error);
+
       throw new UnauthorizedException('TOKEN inválido');
     }
   }

@@ -1,26 +1,29 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductoService } from './producto.service';
 import { CrearProductoDto } from './dto/crear-producto.dto';
 import { ActualizarProductoDto } from './dto/actualizar-producto.dto';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { AutenticadorGuard } from 'src/guard/autenticador.guard';
 
+@ApiBearerAuth()
+@UseGuards(AutenticadorGuard)
 @ApiTags('Producto')
 @Controller('producto')
 export class ProductoController {
