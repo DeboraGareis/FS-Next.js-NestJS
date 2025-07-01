@@ -21,6 +21,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AutenticadorGuard } from 'src/guard/autenticador.guard';
+import { RolesGuard } from 'src/guard/roles.guard';
+import { Rol } from 'src/guard/enum';
+import { Roles } from 'src/decoradores/roles.decorador';
 
 @ApiBearerAuth()
 @UseGuards(AutenticadorGuard)
@@ -30,6 +33,8 @@ export class ProductoController {
   constructor(private readonly productoService: ProductoService) {}
 
   @Post()
+  @Roles(Rol.ADMINISTRADOR, Rol.USUARIO)
+  @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Crear un producto' })
   @ApiBody({ type: CrearProductoDto })
   async crearProducto(@Body() crearProductoDto: CrearProductoDto) {
