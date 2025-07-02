@@ -3,6 +3,7 @@ import {
   HttpException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateUsuario } from './dto/crear_usuario.dto';
 import { PrismaService } from 'src/prisma.service';
@@ -31,7 +32,7 @@ export class UsuarioService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException('No se pudo crear el usuario');
     }
   }
 
@@ -39,8 +40,11 @@ export class UsuarioService {
     try {
       const user = this.prismaService.usuario.findFirst({ where: { id: id } });
       return user;
-    } catch (error) {
-      throw new InternalServerErrorException();
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`No se encontró el usuario con id: ${id}`);
+      }
+      throw new InternalServerErrorException('Error al buscar el usuario por ID',);
     }
   }
 
@@ -58,15 +62,33 @@ export class UsuarioService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException('Error al buscar el usuario por mail');
     }
   }
 
-  getAllList() {
+   async getAllList(params: { page: number; limit: number }) {
+    const { page, limit } = params;
+    const skip = (page - 1) * limit;
+
     try {
-      return this.prismaService.usuario.findMany();
+      const [usuarios, total] = await this.prismaService.$transaction([
+        this.prismaService.usuario.findMany({
+          skip, //salto
+          take: limit,
+          orderBy: { nombre: 'asc' }, 
+        }),
+        this.prismaService.usuario.count(),
+      ]);
+
+      return {
+        data: usuarios,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException('Error al obtener lista de usuarios');
     }
   }
 
@@ -77,8 +99,11 @@ export class UsuarioService {
         data: { email: mail },
       });
       return user;
-    } catch (error) {
-      throw new InternalServerErrorException();
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`No se encontró el usuario con id: ${id}`);
+      }
+      throw new InternalServerErrorException('Error al actualizar el mail');
     }
   }
 
@@ -86,8 +111,11 @@ export class UsuarioService {
     try {
       const user = this.prismaService.usuario.delete({ where: { id: id } });
       return user;
-    } catch (error) {
-      throw new InternalServerErrorException();
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`No se encontró el usuario con id: ${id}`);
+      }
+      throw new InternalServerErrorException('Error al eliminar usuario');
     }
   }
 }

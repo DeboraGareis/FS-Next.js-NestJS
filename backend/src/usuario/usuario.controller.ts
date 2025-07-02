@@ -8,10 +8,11 @@ import {
   Delete,
   ParseUUIDPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuario, UpdateMail } from './dto/crear_usuario.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AutenticadorGuard } from 'src/guard/autenticador.guard';
 
 @Controller('usuario')
@@ -27,12 +28,20 @@ export class UsuarioController {
   }
 
 
-  @Get()
+ @Get()
   @UseGuards(AutenticadorGuard)
-    @ApiBearerAuth()
-    @ApiOperation({summary: 'Array de usuarios de la DB' })
-  getAllList() {
-    return this.usuarioService.getAllList();
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Array de usuarios de la DB' })
+  @ApiQuery({ name: 'page', required: true, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: true, type: Number, example: 10 })
+  getAllList(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+  ) {
+    return this.usuarioService.getAllList({
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+    });
   }
 
 

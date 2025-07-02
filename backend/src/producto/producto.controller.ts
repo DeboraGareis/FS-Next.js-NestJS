@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,14 +8,17 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  UseGuards,
+  UploadedFile,
+  UseGuards, 
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductoService } from './producto.service';
-import { CrearProductoDto } from './dto/crear-producto.dto';
+import { CrearProductoDto, CrearProductoSwaggerSchema } from './dto/crear-producto.dto';
 import { ActualizarProductoDto } from './dto/actualizar-producto.dto';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -24,21 +28,33 @@ import { AutenticadorGuard } from 'src/guard/autenticador.guard';
 import { RolesGuard } from 'src/guard/roles.guard';
 import { Rol } from 'src/guard/enum';
 import { Roles } from 'src/decoradores/roles.decorador';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiBearerAuth()
 @UseGuards(AutenticadorGuard)
 @ApiTags('Producto')
 @Controller('producto')
 export class ProductoController {
-  constructor(private readonly productoService: ProductoService) {}
+  constructor(private readonly productoService: ProductoService
+  ) {}
 
-  @Post()
-  @Roles(Rol.ADMINISTRADOR, Rol.USUARIO)
+@Post()
+ // @Roles(Rol.ADMINISTRADOR, Rol.USUARIO)
   @UseGuards(RolesGuard)
+  @UseInterceptors(FileInterceptor('file')) // "file" es como espero la imagen
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear un producto' })
-  @ApiBody({ type: CrearProductoDto })
-  async crearProducto(@Body() crearProductoDto: CrearProductoDto) {
-    return await this.productoService.crearProducto(crearProductoDto);
+  @ApiConsumes('multipart/form-data')
+  @ApiBody(CrearProductoSwaggerSchema)
+  async crearProducto(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() crearProductoDto: CrearProductoDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('La imagen del producto es requerida');
+    }
+    const imagen = await this.productoService.uploadImage(file);
+    return await this.productoService.crearProducto(crearProductoDto,imagen.url);
   }
 
   @Get()
@@ -66,10 +82,7 @@ export class ProductoController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() actualizarProductoDto: ActualizarProductoDto,
   ) {
-    return await this.productoService.actualizarIdProducto(
-      id,
-      actualizarProductoDto,
-    );
+    return await this.productoService.actualizarIdProducto( id, actualizarProductoDto,);
   }
 
   @Delete(':id')
