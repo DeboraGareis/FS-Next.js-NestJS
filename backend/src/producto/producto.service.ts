@@ -6,19 +6,22 @@ import {
 import { CrearProductoDto } from './dto/crear-producto.dto';
 import { PrismaService } from 'src/prisma.service';
 import { ActualizarProductoDto } from './dto/actualizar-producto.dto';
+import { UploadApiResponse, v2 } from 'cloudinary';
+const toStream = require('buffer-to-stream');
 
 @Injectable()
 export class ProductoService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService
+  ) {}
 
-  async crearProducto(crearProductoDto: CrearProductoDto) {
+  async crearProducto(crearProductoDto: CrearProductoDto, imagen: string ) {
     try {
       const productoNuevo = await this.prismaService.producto.create({
         data: {
           categoria: crearProductoDto.categoria,
           nombre: crearProductoDto.nombre,
           stock: Number(crearProductoDto.stock),
-          imagen: crearProductoDto.imagen,
+          imagen: imagen,
           precio: Number(crearProductoDto.precio),
         },
       });
@@ -28,11 +31,29 @@ export class ProductoService {
     }
   }
 
+  async uploadImage(file: Express.Multer.File): Promise<UploadApiResponse> {
+    return new Promise((resolve, reject) => {
+      const upload = v2.uploader.upload_stream(
+        { resource_type: 'auto' },
+        (error, result:UploadApiResponse) => {
+          if (error) {
+            reject(
+              new InternalServerErrorException('Error al subir la imagen'),
+            );
+          } else {
+            resolve(result);
+          }
+        },
+      );
+      toStream(file.buffer).pipe(upload);
+    });
+  }
+
   async listaDeProducto() {
     try {
       return await this.prismaService.producto.findMany();
     } catch (error) {
-      throw new InternalServerErrorException('Error');
+      throw new InternalServerErrorException('Error al obtener los productos');
     }
   }
 
@@ -45,7 +66,7 @@ export class ProductoService {
       if (error.code === 'P2025') {
         throw new NotFoundException(`No se encontró el producto con id: ${id}`);
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException('Error al buscar el producto por ID',);
     }
   }
 
@@ -72,7 +93,7 @@ export class ProductoService {
       if (error.code === 'P2025') {
         throw new NotFoundException(`No se encontró el producto con id: ${id}`);
       }
-      throw new InternalServerErrorException('Error');
+      throw new InternalServerErrorException('Error al actualizar el producto');
     }
   }
 

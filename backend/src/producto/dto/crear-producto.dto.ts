@@ -17,13 +17,30 @@ export class CrearProductoDto {
   @IsNotEmpty()
   stock: string;
 
-  @ApiProperty({ description: 'Imagen del producto' })
-  @IsString()
-  @IsNotEmpty()
-  imagen: string;
+  // @ApiProperty({ description: 'Imagen del producto' })
+  // @IsString()
+  // @IsNotEmpty()
+  // imagen: string;
 
   @ApiProperty({ description: 'Precio del producto' })
   @IsString()
   @IsNotEmpty()
   precio: string;
 }
+
+export const CrearProductoSwaggerSchema = {
+  schema: {
+    type: 'object',
+    properties: {
+      file: {
+        type: 'string',
+        format: 'binary',
+      },
+      categoria: { type: 'string', example: '123' },
+      nombre: { type: 'string', example: 'Producto 1' },
+      stock: { type: 'string', example: '50' },
+      precio: { type: 'string', example: '199.99' },
+    },
+    required: ['file', 'categoria', 'nombre', 'stock', 'precio'],
+  },
+};
