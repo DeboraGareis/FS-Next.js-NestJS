@@ -10,22 +10,38 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signIn(mail: string, pass: string): Promise<{ access_token: string }> {
+  async signIn(
+    mail: string,
+    pass: string,
+  ): Promise<{ access_token: string } | undefined> {
     const user = await this.prisma.usuario.findUnique({
       where: { email: mail },
     });
-    if (!user) throw new UnauthorizedException('Credenciales inválidas');
+    const administrador = await this.prisma.administrador.findUnique({
+      where: { email: mail },
+    });
 
-    const isMatch = await bcrypt.compare(pass, user?.password);
-    if (isMatch !== true) {
+    if (!user && !administrador)
       throw new UnauthorizedException('Credenciales inválidas');
+
+    if (user) {
+      const isMatch = await bcrypt.compare(pass, user?.password);
+      if (isMatch !== true) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+      const payload = { rol: 'usuario', sub: user.id };
+      const access_token = await this.jwtService.signAsync(payload);
+      return { access_token };
     }
+    if (administrador) {
+      const isMatch = await bcrypt.compare(pass, administrador?.password);
 
-    const payload = { sub: user?.id };
-    console.log(payload);
-
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+      if (isMatch !== true) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+      const payload = { rol: 'administrador', sub: administrador.id };
+      const access_token = await this.jwtService.signAsync(payload);
+      return { access_token };
+    }
   }
 }

@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -24,7 +25,6 @@ import { Roles } from 'src/decoradores/roles.decorador';
 import { Rol } from 'src/guard/enum';
 import { AutenticadorGuard } from 'src/guard/autenticador.guard';
 import { RolesGuard } from 'src/guard/roles.guard';
-import { request } from 'http';
 
 @ApiTags('Detalle Orden')
 @Controller('detalle-orden')
@@ -32,12 +32,12 @@ export class DetalleOrdenController {
   constructor(private readonly detalleOrdenService: DetalleOrdenService) {}
 
   @Post()
-  @Roles(Rol.USUARIO) //asignar el rol que puede acceder a esta informacion
-  @UseGuards(AutenticadorGuard, RolesGuard) //verifica que el jwt que tenga contenga los permisos necesarios
+  @Roles(Rol.USUARIO, Rol.ADMINISTRADOR)
+  @UseGuards(AutenticadorGuard, RolesGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear un detalle de orden' })
   @ApiBody({ type: CrearDetalleOrdenDto })
   async crearDetalleOrden(@Body() crearDetalleOrdenDto: CrearDetalleOrdenDto) {
-    console.log('{{{request}}}', request);
     return await this.detalleOrdenService.crearDetalleOrden(
       crearDetalleOrdenDto,
     );
@@ -80,8 +80,6 @@ export class DetalleOrdenController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() actualizarDetalleOrdenDto: ActualizarDetalleOrdenDto,
   ) {
-    console.log('paso');
-
     return await this.detalleOrdenService.actualizarIdDetalleDeOrden(
       id,
       actualizarDetalleOrdenDto,
