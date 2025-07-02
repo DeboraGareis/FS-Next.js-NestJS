@@ -19,12 +19,12 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const payload = context.switchToHttp().getRequest();
-    const { user } = payload; // preguntar que datos me envia por token para validar
+    const { user } = payload;
 
     if (!user || !user.rol) {
       throw new ForbiddenException('No tienes el rol requerido');
     }
-    if (!requiereRoles.includes(user.roles)) {
+    if (!requiereRoles.includes(user.rol)) {
       throw new ForbiddenException(
         'No tienes permisos para acceder a este recurso',
       );

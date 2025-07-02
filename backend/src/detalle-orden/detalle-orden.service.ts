@@ -1,9 +1,11 @@
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { NotFoundError } from 'rxjs';
+import { CarritoService } from 'src/carrito/carrito.service';
 import { PrismaService } from 'src/prisma.service';
 import { ProductoService } from 'src/producto/producto.service';
 
@@ -12,21 +14,15 @@ export class DetalleOrdenService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly productoService: ProductoService,
+    private readonly carritoService: CarritoService,
   ) {}
 
   async crearDetalleOrden(crearDetalleOrden) {
     try {
       const { cantidad, id_carrito, id_producto, precio } = crearDetalleOrden;
 
-      const id_producto_db =
-        await this.productoService.buscarIdProducto(id_producto);
-
-      if (!id_producto_db?.id) {
-        throw new NotFoundException(
-          `Producto con id ${id_producto} no encontrado`,
-        );
-      }
-
+      await this.productoService.buscarIdProducto(id_producto);
+      await this.carritoService.buscarIdCarrito(id_carrito);
       const nuevoDetalleOrden = await this.prismaService.detalleOrden.create({
         data: {
           cantidad,
@@ -42,13 +38,9 @@ export class DetalleOrdenService {
 
       return nuevoDetalleOrden;
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        console.log(error);
-
+      if (error instanceof HttpException) {
         throw error;
       }
-      console.log(error);
-
       throw new InternalServerErrorException(error);
     }
   }
@@ -63,10 +55,17 @@ export class DetalleOrdenService {
 
   async buscarIdDetalleDeOrden(id: string) {
     try {
-      return await this.prismaService.detalleOrden.findUnique({
+      const detalleOrden = await this.prismaService.detalleOrden.findUnique({
         where: { id: id },
       });
+      if (!detalleOrden?.id) {
+        throw new NotFoundException();
+      }
+      return detalleOrden;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException();
     }
   }
@@ -80,8 +79,6 @@ export class DetalleOrdenService {
       if (id_carrito !== undefined) data.id_carrito = id_carrito;
       if (id_producto !== undefined) data.id_producto = id_producto;
       if (precio !== undefined) data.precio = precio;
-      console.log(data.producto);
-      console.log(data.id_producto);
 
       const detalleOrdenActualizado =
         await this.prismaService.detalleOrden.update({
@@ -90,17 +87,22 @@ export class DetalleOrdenService {
         });
       return detalleOrdenActualizado;
     } catch (error) {
-      console.log(error);
-
+      if (error.code === 'P2025') {
+        throw new NotFoundException(error.meta.cause);
+      }
       throw new InternalServerErrorException(error);
     }
   }
   async eliminarIdDetalleDeOrden(id: string) {
     try {
-      return await this.prismaService.detalleOrden.delete({
+      await this.prismaService.detalleOrden.delete({
         where: { id: id },
       });
+      return { message: 'Detalle de orden eliminado' };
     } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(error.meta.cause);
+      }
       throw new InternalServerErrorException();
     }
   }
